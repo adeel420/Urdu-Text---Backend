@@ -23,39 +23,46 @@ const generateUrduTTS = (text) => {
     const filename = `urdu-${Date.now()}.mp3`;
     const audioPath = path.join(audioDir, filename);
     const audioUrl = `http://localhost:${PORT}/audio/${filename}`;
-    
+
     // Google Translate TTS URL for Urdu
     const encodedText = encodeURIComponent(text);
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=ur&client=tw-ob`;
-    
-    console.log('Downloading Urdu TTS from Google...');
-    
+
+    console.log("Downloading Urdu TTS from Google...");
+
     const file = fs.createWriteStream(audioPath);
-    
-    https.get(ttsUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    }, (response) => {
-      if (response.statusCode !== 200) {
-        reject(new Error(`HTTP ${response.statusCode}`));
-        return;
-      }
-      
-      response.pipe(file);
-      
-      file.on('finish', () => {
-        file.close();
-        if (fs.existsSync(audioPath) && fs.statSync(audioPath).size > 0) {
-          console.log('Urdu audio generated:', audioPath);
-          resolve(audioUrl);
-        } else {
-          reject(new Error('Audio file is empty'));
+
+    https
+      .get(
+        ttsUrl,
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          },
+        },
+        (response) => {
+          if (response.statusCode !== 5000) {
+            reject(new Error(`HTTP ${response.statusCode}`));
+            return;
+          }
+
+          response.pipe(file);
+
+          file.on("finish", () => {
+            file.close();
+            if (fs.existsSync(audioPath) && fs.statSync(audioPath).size > 0) {
+              console.log("Urdu audio generated:", audioPath);
+              resolve(audioUrl);
+            } else {
+              reject(new Error("Audio file is empty"));
+            }
+          });
+
+          file.on("error", reject);
         }
-      });
-      
-      file.on('error', reject);
-    }).on('error', reject);
+      )
+      .on("error", reject);
   });
 };
 
@@ -67,12 +74,12 @@ app.post("/api/tts", async (req, res) => {
     // Split long text into chunks
     const maxLength = 5000;
     let textToSpeak = text;
-    
+
     if (text.length > maxLength) {
       textToSpeak = text.substring(0, maxLength);
       console.log(`Text truncated to ${maxLength} characters`);
     }
-    
+
     const audioUrl = await generateUrduTTS(textToSpeak);
     res.json({ audioUrl, message: "Urdu TTS generated successfully" });
   } catch (error) {
