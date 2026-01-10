@@ -65,7 +65,7 @@ app.post("/api/tts", async (req, res) => {
 
   try {
     // Split long text into chunks
-    const maxLength = 200;
+    const maxLength = 5000;
     let textToSpeak = text;
     
     if (text.length > maxLength) {
